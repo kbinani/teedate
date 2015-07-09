@@ -21,17 +21,13 @@ func main() {
 		}
 	}
 
-	const kBufferSize = 4096
+	const kBufferSize = 1
 	inputBuffer := make([]byte, kBufferSize)
-	var last byte
-	var firstChar bool = true
 	outputBuffer := make([]byte, kBufferSize)
 	var outputBufferSize int = 0
-	kSeparator := []byte{' '}
 
-	GetNowTimeString := func() []byte {
-		return []byte(strftime.Format(*timeFormat, time.Now()))
-	}
+	kSeparator := []byte{' '}
+	kCR := []byte{'\x0d'}
 
 	AppendBuffer := func(buffer []byte) {
 		var remaining int = len(buffer)
@@ -56,6 +52,14 @@ func main() {
 		}
 	}
 
+	PrintTime := func() {
+		AppendBuffer([]byte(strftime.Format(*timeFormat, time.Now())))
+		AppendBuffer(kSeparator)
+	}
+
+	var last byte
+	var printTime bool = true
+
 	for true {
 		size, _ := os.Stdin.Read(inputBuffer)
 
@@ -64,25 +68,20 @@ func main() {
 		}
 
 		for i := 0; i < size; i++ {
-			b := inputBuffer[i]
-			if firstChar {
-				AppendBuffer(GetNowTimeString())
-				AppendBuffer(kSeparator)
+			if printTime {
+				PrintTime()
+				printTime = false
 			}
 
-			if b == '\x0a' {
+			if inputBuffer[i] == '\x0a' {
 				if last == '\x0d' {
-					AppendBuffer([]byte{'\x0d'})
+					AppendBuffer(kCR)
 				}
-				AppendBuffer([]byte{'\x0a'})
-				AppendBuffer(GetNowTimeString())
-				AppendBuffer(kSeparator)
-			} else {
-				AppendBuffer([]byte{b})
+				printTime = true
 			}
+			AppendBuffer(inputBuffer[i:i + 1])
 
-			last = b
-			firstChar = false
+			last = inputBuffer[i]
 		}
 	}
 
