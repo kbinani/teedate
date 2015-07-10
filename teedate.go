@@ -27,7 +27,7 @@ func main() {
 	var outputBufferSize int = 0
 
 	kSeparator := []byte{' '}
-	kCR := []byte{'\x0d'}
+	const kLF byte = '\x0a'
 
 	AppendBuffer := func(buffer []byte) {
 		var remaining int = len(buffer)
@@ -57,7 +57,6 @@ func main() {
 		AppendBuffer(kSeparator)
 	}
 
-	var last byte
 	var printTime bool = true
 
 	for true {
@@ -73,25 +72,15 @@ func main() {
 				printTime = false
 			}
 
-			if inputBuffer[i] == '\x0a' {
-				if last == '\x0d' {
-					AppendBuffer(kCR)
-				}
+			if inputBuffer[i] == kLF {
 				printTime = true
 			}
 			AppendBuffer(inputBuffer[i:i + 1])
-
-			last = inputBuffer[i]
-		}
-	}
-
-	if outputBufferSize > 0 {
-		for _, stream := range outStreams {
-			stream.Write(outputBuffer[0:outputBufferSize])
 		}
 	}
 
 	for _, stream := range outStreams {
+		stream.Write(outputBuffer[0:outputBufferSize])
 		stream.Close()
 	}
 }
